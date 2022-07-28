@@ -6,15 +6,18 @@ import (
 	"github.com/gorilla/mux"
 	"log"
 	"net/http"
+	"regexp"
 )
 
 func getAlternativeIps(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	addr := vars["ip"]
-	prefix := vars["prefix"]
+	prefix := ""
 
-	if prefix != "" {
-		prefix = prefix + "://"
+	if vars["prefix"] != "" {
+		if reg, err := regexp.Compile("[^a-zA-Z\\d]+"); err == nil {
+			prefix = reg.ReplaceAllString(vars["prefix"], "") + "://"
+		}
 	}
 
 	if utils.IsValidIp(addr) == false {
