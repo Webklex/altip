@@ -56,8 +56,18 @@ func getAlternativeIps(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, result)
 }
 
+func getHome(w http.ResponseWriter, r *http.Request) {
+	_, _ = fmt.Fprintf(w, "AltIP usage examples:\n")
+	_, _ = fmt.Fprintf(w, "curl https://altip.gogeoip.com/222.165.163.91\n")
+	_, _ = fmt.Fprintf(w, "..with prefix:\n")
+	_, _ = fmt.Fprintf(w, "curl https://altip.gogeoip.com/222.165.163.91/http\n")
+	_, _ = fmt.Fprintf(w, "\n")
+	_, _ = fmt.Fprintf(w, "Host it yourself, source code available under: https://github.com/Webklex/altip\n")
+}
+
 func main() {
 	router := mux.NewRouter().StrictSlash(true)
+	router.HandleFunc("/", getHome)
 	router.HandleFunc("/{ip}", getAlternativeIps)
 	router.HandleFunc("/{ip}/{prefix}", getAlternativeIps)
 
