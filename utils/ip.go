@@ -2,47 +2,11 @@ package utils
 
 import (
 	"fmt"
+	"github.com/projectdiscovery/mapcidr"
 	"net"
 	"strconv"
 	"strings"
 )
-
-func IsValidIp(addr string) bool {
-	if addr == "" {
-		return false
-	}
-	segs := 0
-	chcnt := 0
-	accum := 0
-
-	for _, ch := range addr {
-		if ch == '.' {
-			if chcnt == 0 {
-				return false
-			}
-
-			if segs++; segs == 4 {
-				return false
-			}
-			chcnt = 0
-			accum = 0
-			continue
-		}
-		cn, _ := strconv.Atoi(string(ch))
-		if (cn < 0) || (cn > 9) {
-			return false
-		}
-		if accum = accum*10 + cn - 0; accum > 255 {
-			return false
-		}
-		chcnt++
-	}
-
-	if segs != 3 || chcnt == 0 {
-		return false
-	}
-	return true
-}
 
 func Tokenize(addr string) []uint {
 	segments := strings.Split(addr, ".")
@@ -95,17 +59,18 @@ func TransformLeftShift(shift int, format, fallbackFormat string, tokens []uint)
 	return result
 }
 
-func Resolve(host string) (string, error) {
+func ResolveAll(host string) ([]string, error) {
 	ips, err := net.LookupIP(host)
+	resolved := make([]string, 0)
 	if err != nil {
-		return "", err
+		return resolved, err
 	}
 	for _, ip := range ips {
-		if addr := ip.String(); strings.Contains(addr, ":") == false {
-			return addr, nil
+		if addr := ip.String(); addr != "" {
+			resolved = append(resolved, addr)
 		}
 	}
-	return "", nil
+	return resolved, nil
 }
 
 func stringListContains(check string, items []string) bool {
@@ -126,7 +91,7 @@ func filterStringList(items []string) (result []string) {
 	return
 }
 
-func Obfuscate(prefix, addr string) (ips []string) {
+func ObfuscateIpV4(prefix, addr string) (ips []string) {
 	tokens := Tokenize(addr)
 
 	ips = append(ips, fmt.Sprintf("%s%s\n", prefix, addr))
@@ -194,5 +159,40 @@ func Obfuscate(prefix, addr string) (ips []string) {
 		ips = append(ips, fmt.Sprintf("%s%d.%d.%d\n", prefix, tokens[0], tokens[1], tokens[2]))
 	}
 
-	return filterStringList(ips)
+	for _, ip := range mapcidr.AlterIP(addr, []string{"3", "4", "6", "7", "8", "9", "10"}, 3, false) {
+		if strings.Contains(ip, ":") {
+			if prefix != "" {
+				ips = append(ips, fmt.Sprintf("%s[%s]\n", prefix, ip))
+			} else {
+				ips = append(ips, fmt.Sprintf("%s%s\n", prefix, ip))
+			}
+			ips = append(ips, ObfuscateIpV6(prefix, ip)...)
+		} else {
+			ips = append(ips, fmt.Sprintf("%s%s\n", prefix, ip))
+		}
+	}
+	return ips
+}
+
+func ObfuscateIpV6(prefix, addr string) (ips []string) {
+	if prefix != "" {
+		ips = append(ips, fmt.Sprintf("%s[%s]\n", prefix, addr))
+	} else {
+		ips = append(ips, fmt.Sprintf("%s%s\n", prefix, addr))
+	}
+	for _, ip := range mapcidr.AlterIP(addr, []string{"1", "2", "3", "4", "5", "6", "8", "9"}, 3, false) {
+		if strings.Contains(ip, ":") && prefix != "" {
+			ips = append(ips, fmt.Sprintf("%s[%s]\n", prefix, ip))
+		} else {
+			ips = append(ips, fmt.Sprintf("%s%s\n", prefix, ip))
+		}
+	}
+	return ips
+}
+
+func Obfuscate(prefix, addr string) (ips []string) {
+	if strings.Contains(addr, ":") == false {
+		return filterStringList(ObfuscateIpV4(prefix, addr))
+	}
+	return filterStringList(ObfuscateIpV6(prefix, addr))
 }
