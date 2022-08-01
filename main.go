@@ -2,6 +2,7 @@ package main
 
 import (
 	"altip/utils"
+	"flag"
 	"fmt"
 	"github.com/gorilla/mux"
 	"log"
@@ -9,9 +10,18 @@ import (
 	"regexp"
 )
 
+const usage = `Usage of altip:
+  -a, --address string    IP or Domain to obfuscate
+  -p, --prefix string     Prefix to be added in front of the obfuscated ip
+  -H, --host string       API host address to bind to (default "127.0.0.1")
+  -P, --port integer      API port to listen on (default 8066)
+  -s, --serve       	  Serve a public api endpoint
+  -h, --help              Prints help information 
+`
+
 func getAlternativeIps(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	addr := vars["ip"]
+	addr, _ := utils.Resolve(vars["ip"])
 	prefix := ""
 
 	if vars["prefix"] != "" {
@@ -24,36 +34,11 @@ func getAlternativeIps(w http.ResponseWriter, r *http.Request) {
 		_, _ = fmt.Fprintf(w, "error: invalid ip")
 		return
 	}
-	tokens := utils.Tokenize(addr)
 
-	_, _ = fmt.Fprintf(w, "%s%d\n", prefix, (tokens[0]<<24)|(tokens[1]<<16)|(tokens[2]<<8)|tokens[3])
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.SimpleTransform("0x%02X", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.SimpleTransform("%04o", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.SimpleTransform("0x%010X", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.SimpleTransform("%010o", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(3, "%d", "0x%02X", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(2, "%d", "0x%02X", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(1, "%d", "0x%02X", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(3, "%d", "%04o", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(2, "%d", "%04o", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(1, "%d", "%04o", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.TransformLeftShift(2, "0x%02X", "%d", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.TransformLeftShift(2, "%04o", "%d", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, fmt.Sprintf("0x%02X.%d", tokens[0], (tokens[1]<<16)|(tokens[2]<<8)|tokens[3]))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, fmt.Sprintf("%04o.%d", tokens[0], (tokens[1]<<16)|(tokens[2]<<8)|tokens[3]))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(2, "%04o", "0x%02X", tokens))
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, utils.ConditionalTransform(1, "%04o", "0x%02X", tokens))
-
-	result := ""
-	for i := 0; i < 2; i++ {
-		if i >= 1 {
-			result += fmt.Sprintf("%04o.", tokens[i])
-			result += fmt.Sprintf("%d", (tokens[2]<<8)|tokens[3])
-		} else {
-			result += fmt.Sprintf("0x%02X.", tokens[i])
-		}
+	for _, ip := range utils.Obfuscate(prefix, addr) {
+		_, _ = fmt.Fprintf(w, "%s", ip)
 	}
-	_, _ = fmt.Fprintf(w, "%s%s\n", prefix, result)
+
 }
 
 func getHome(w http.ResponseWriter, r *http.Request) {
@@ -62,14 +47,46 @@ func getHome(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "..with prefix:\n")
 	_, _ = fmt.Fprintf(w, "curl https://altip.gogeoip.com/222.165.163.91/http\n")
 	_, _ = fmt.Fprintf(w, "\n")
-	_, _ = fmt.Fprintf(w, "Host it yourself, source code available under: https://github.com/Webklex/altip\n")
+	_, _ = fmt.Fprintf(w, "Host it yourself, source code available at: https://github.com/Webklex/altip\n")
 }
 
 func main() {
-	router := mux.NewRouter().StrictSlash(true)
-	router.HandleFunc("/", getHome)
-	router.HandleFunc("/{ip}", getAlternativeIps)
-	router.HandleFunc("/{ip}/{prefix}", getAlternativeIps)
+	var (
+		prefix, address, host string
+		port                  uint
+		serve                 bool
+	)
+	flag.StringVar(&address, "address", "", "IP or Domain to obfuscate")
+	flag.StringVar(&address, "a", "", "IP or Domain to obfuscate")
+	flag.StringVar(&prefix, "prefix", "", "Prefix to be added in front of the obfuscated ip")
+	flag.StringVar(&prefix, "p", "", "Prefix to be added in front of the obfuscated ip")
+	flag.StringVar(&host, "host", "127.0.0.1", "API host address to bind to")
+	flag.StringVar(&host, "H", "127.0.0.1", "API host address to bind to")
+	flag.UintVar(&port, "port", 8066, "API port to listen on")
+	flag.UintVar(&port, "P", 8066, "API port to listen on")
+	flag.BoolVar(&serve, "serve", false, "Serve a public api endpoint")
+	flag.BoolVar(&serve, "s", false, "Serve a public api endpoint")
+	flag.Usage = func() { fmt.Print(usage) }
+	flag.Parse()
 
-	log.Fatal(http.ListenAndServe(":8066", router))
+	if serve {
+		router := mux.NewRouter().StrictSlash(true)
+		router.HandleFunc("/", getHome)
+		router.HandleFunc("/{ip}", getAlternativeIps)
+		router.HandleFunc("/{ip}/{prefix}", getAlternativeIps)
+
+		addr := fmt.Sprintf("%s:%d", host, port)
+		fmt.Printf("Listening on: http://%s/\n", addr)
+
+		log.Fatal(http.ListenAndServe(addr, router))
+	} else if address != "" {
+		if utils.IsValidIp(address) == false {
+			fmt.Println("error: invalid ip")
+			return
+		}
+
+		for _, ip := range utils.Obfuscate(prefix, address) {
+			fmt.Printf("%s", ip)
+		}
+	}
 }
