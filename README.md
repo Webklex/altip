@@ -1,54 +1,124 @@
-# Alternative / Obfuscated IPs
+# Convert an IP into Alternative / Obfuscated versions
 Inspired by https://github.com/OsandaMalith/IPObfuscator
 
-Demo available online at: https://altip.gogeoip.com
+An online demo is available at: https://altip.gogeoip.com
 
-### Usage
-API url: /{ip}/{optional prefix}
-
-curl https://altip.gogeoip.com/222.165.163.91
-```text
-3735397211
-0xDE.0xA5.0xA3.0x5B
-0336.0245.0243.0133
-0x00000000DE.0x00000000A5.0x00000000A3.0x000000005B
-0000000336.0000000245.0000000243.0000000133
-0xDE.0xA5.0xA3.91
-0xDE.0xA5.163.91
-0xDE.165.163.91
-0336.0245.0243.91
-0336.0245.163.91
-0336.165.163.91
-0xDE.0xA5.41819
-0336.0245.41819
-0xDE.10855259
-0336.10855259
-0xDE.0xA5.0243.0133
-0xDE.0245.0243.0133
-0xDE.0245.41819
+## Usage
+### CLI
+```
+Usage of altip:
+  -a, --address string    IP or Domain to obfuscate
+  -p, --prefix string     Prefix to be added in front of the obfuscated ip
+  -H, --host string       API host address to bind to (default "127.0.0.1")
+  -P, --port integer      API port to listen on (default 8066)
+  -s, --serve       	  Serve a public api endpoint
+  -h, --help              Prints help information 
 ```
 
-curl https://altip.gogeoip.com/222.165.163.91/http
-```text
-http://3735397211
-http://0xDE.0xA5.0xA3.0x5B
-http://0336.0245.0243.0133
-http://0x00000000DE.0x00000000A5.0x00000000A3.0x000000005B
-http://0000000336.0000000245.0000000243.0000000133
-http://0xDE.0xA5.0xA3.91
-http://0xDE.0xA5.163.91
-http://0xDE.165.163.91
-http://0336.0245.0243.91
-http://0336.0245.163.91
-http://0336.165.163.91
-http://0xDE.0xA5.41819
-http://0336.0245.41819
-http://0xDE.10855259
-http://0336.10855259
-http://0xDE.0xA5.0243.0133
-http://0xDE.0245.0243.0133
-http://0xDE.0245.41819
+#### Example without prefix
+```bash
+altip -a 127.0.0.1
 ```
+```text
+127.0.0.1
+2130706433
+0x7F.0x00.0x00.0x01
+...
+```
+
+#### Example with prefix
+```bash
+altip -a 127.0.0.1 -p http://
+```
+```text
+http://127.0.0.1
+http://2130706433
+http://0x7F.0x00.0x00.0x01
+...
+```
+
+#### Serve the API
+```bash
+altip --serve
+```
+```text
+Listening on: http://127.0.0.1:8066/
+```
+
+
+### API
+API url: `/{ip or hostname}/{optional prefix}`
+
+> The given hostname will be resolved (if possible) to its corresponding ip address, the results may vary.
+
+#### Example without prefix
+```bash
+curl https://altip.gogeoip.com/127.0.0.1
+```
+```text
+127.0.0.1
+2130706433
+0x7F.0x00.0x00.0x01
+0177.0000.0000.0001
+0x000000007F.0x0000000000.0x0000000000.0x0000000001
+0000000177.0000000000.0000000000.0000000001
+0x7F.0x00.0x00.1
+0x7F.0x00.0.1
+0x7F.0.0.1
+0x7F.0x0.0x0.1
+0x7F.0x0.0.1
+0177.0000.0000.1
+0177.0000.0.1
+0177.0.0.1
+0x7F.0x00.1
+0x7F.0x0.1
+0177.0000.1
+0x7F.1
+0177.1
+0x7F.0x00.0000.0001
+0x7F.0x0.0000.0001
+0x7F.0000.0000.0001
+0x7F000001
+017700000001
+0x7F.0000.1
+127.0.1
+127.1
+```
+
+#### Example with prefix
+```bash
+curl https://altip.gogeoip.com/127.0.0.1/http
+```
+```text
+http://127.0.0.1
+http://2130706433
+http://0x7F.0x00.0x00.0x01
+http://0177.0000.0000.0001
+http://0x000000007F.0x0000000000.0x0000000000.0x0000000001
+http://0000000177.0000000000.0000000000.0000000001
+http://0x7F.0x00.0x00.1
+http://0x7F.0x00.0.1
+http://0x7F.0.0.1
+http://0x7F.0x0.0x0.1
+http://0x7F.0x0.0.1
+http://0177.0000.0000.1
+http://0177.0000.0.1
+http://0177.0.0.1
+http://0x7F.0x00.1
+http://0x7F.0x0.1
+http://0177.0000.1
+http://0x7F.1
+http://0177.1
+http://0x7F.0x00.0000.0001
+http://0x7F.0x0.0000.0001
+http://0x7F.0000.0000.0001
+http://0x7F000001
+http://017700000001
+http://0x7F.0000.1
+http://127.0.1
+http://127.1
+```
+
 
 ## License
 The MIT License (MIT). Please see [License File][link-license] for more information.
