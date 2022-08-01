@@ -1,7 +1,11 @@
-# Convert an IP into Alternative / Obfuscated versions
-Inspired by https://github.com/OsandaMalith/IPObfuscator
+# AltIP - Convert an IP into Alternative / Obfuscated versions
+[![Demo][ico-website-status]][link-demo]
+[![License][ico-license]][link-license]
 
-An online demo is available at: https://altip.gogeoip.com
+[![Ko-Fi][ico-kofi]][link-kofi]
+
+Inspired by [OsandaMalith/IPObfuscator](https://github.com/OsandaMalith/IPObfuscator). An 
+online demo is available at: https://altip.gogeoip.com
 
 ## Usage
 ### CLI
@@ -123,4 +127,10 @@ http://127.1
 ## License
 The MIT License (MIT). Please see [License File][link-license] for more information.
 
+[ico-kofi]: https://ko-fi.com/img/githubbutton_sm.svg
+[ico-license]: https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square
+[ico-website-status]: https://img.shields.io/website?down_message=Offline&label=Demo&style=flat-square&up_message=Online&url=https%3A%2F%2Faltip.gogeoip.com%2F
+
+[link-kofi]: https://ko-fi.com/webklex
+[link-demo]: https://altip.gogeoip.com/
 [link-license]: https://github.com/Webklex/altip/blob/master/LICENSE
