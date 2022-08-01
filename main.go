@@ -21,7 +21,11 @@ const usage = `Usage of altip:
 
 func getAlternativeIps(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
-	addr, _ := utils.Resolve(vars["ip"])
+	ips, err := utils.ResolveAll(vars["ip"])
+	if len(ips) == 0 || err != nil {
+		_, _ = fmt.Fprintf(w, "error: invalid ip")
+		return
+	}
 	prefix := ""
 
 	if vars["prefix"] != "" {
@@ -30,13 +34,10 @@ func getAlternativeIps(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 
-	if utils.IsValidIp(addr) == false {
-		_, _ = fmt.Fprintf(w, "error: invalid ip")
-		return
-	}
-
-	for _, ip := range utils.Obfuscate(prefix, addr) {
-		_, _ = fmt.Fprintf(w, "%s", ip)
+	for _, addr := range ips {
+		for _, ip := range utils.Obfuscate(prefix, addr) {
+			_, _ = fmt.Fprintf(w, "%s", ip)
+		}
 	}
 
 }
@@ -46,6 +47,9 @@ func getHome(w http.ResponseWriter, r *http.Request) {
 	_, _ = fmt.Fprintf(w, "curl https://altip.gogeoip.com/222.165.163.91\n")
 	_, _ = fmt.Fprintf(w, "..with prefix:\n")
 	_, _ = fmt.Fprintf(w, "curl https://altip.gogeoip.com/222.165.163.91/http\n")
+	_, _ = fmt.Fprintf(w, "Additional examples:\n")
+	_, _ = fmt.Fprintf(w, "curl https://altip.gogeoip.com/google.com/http\n")
+	_, _ = fmt.Fprintf(w, "curl https://altip.gogeoip.com/::ffff:7f00:1/http\n")
 	_, _ = fmt.Fprintf(w, "\n")
 	_, _ = fmt.Fprintf(w, "Host it yourself, source code available at: https://github.com/Webklex/altip\n")
 }
@@ -80,13 +84,15 @@ func main() {
 
 		log.Fatal(http.ListenAndServe(addr, router))
 	} else if address != "" {
-		if utils.IsValidIp(address) == false {
+		ips, err := utils.ResolveAll(address)
+		if len(ips) == 0 || err != nil {
 			fmt.Println("error: invalid ip")
 			return
 		}
-
-		for _, ip := range utils.Obfuscate(prefix, address) {
-			fmt.Printf("%s", ip)
+		for _, addr := range ips {
+			for _, ip := range utils.Obfuscate(prefix, addr) {
+				fmt.Printf("%s", ip)
+			}
 		}
 	}
 }
