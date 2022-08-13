@@ -176,15 +176,24 @@ func ObfuscateIpV4(prefix, addr string) (ips []string) {
 			ips = append(ips, fmt.Sprintf("%s%s\n", prefix, ip))
 		}
 	}
+
+	ips = append(ips, fmt.Sprintf("%sgoogle.com@%s\n", prefix, addr))
+	ips = append(ips, fmt.Sprintf("%sgoogle.com:443@%s\n", prefix, addr))
+
 	return ips
 }
 
 func ObfuscateIpV6(prefix, addr string) (ips []string) {
 	if prefix != "" {
 		ips = append(ips, fmt.Sprintf("%s[%s]\n", prefix, addr))
+		ips = append(ips, fmt.Sprintf("%sgoogle.com@[%s]\n", prefix, addr))
+		ips = append(ips, fmt.Sprintf("%sgoogle.com:443@[%s]\n", prefix, addr))
 	} else {
 		ips = append(ips, fmt.Sprintf("%s%s\n", prefix, addr))
+		ips = append(ips, fmt.Sprintf("%sgoogle.com@%s\n", prefix, addr))
+		ips = append(ips, fmt.Sprintf("%sgoogle.com:443@%s\n", prefix, addr))
 	}
+
 	for _, ip := range mapcidr.AlterIP(addr, []string{"1", "2", "3", "4", "5", "6", "8", "9"}, 3, false) {
 		if strings.Contains(ip, ":") && prefix != "" {
 			ips = append(ips, fmt.Sprintf("%s[%s]\n", prefix, ip))
