@@ -3,6 +3,7 @@ package utils
 import (
 	"fmt"
 	"github.com/projectdiscovery/mapcidr"
+	"golang.org/x/net/idna"
 	"net"
 	"strconv"
 	"strings"
@@ -93,6 +94,10 @@ func filterStringList(items []string) (result []string) {
 
 func ObfuscateIpV4(prefix, addr string) (ips []string) {
 	tokens := Tokenize(addr)
+
+	if idnaString, err := idna.ToASCII(addr); err == nil {
+		ips = append(ips, fmt.Sprintf("%s%s\n", prefix, idnaString))
+	}
 
 	ips = append(ips, fmt.Sprintf("%s%s\n", prefix, addr))
 	ips = append(ips, fmt.Sprintf("%s%d\n", prefix, (tokens[0]<<24)|(tokens[1]<<16)|(tokens[2]<<8)|tokens[3]))
